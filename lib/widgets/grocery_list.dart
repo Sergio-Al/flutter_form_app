@@ -30,8 +30,48 @@ class _GroceryListState extends State<GroceryList> {
     });
   }
 
+  void _removeItem(GroceryItem item) {
+    setState(() {
+      _groceryItems.remove(item);
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
+    Widget content = const Center(
+      child: Text('No items added yet.'),
+    );
+
+    if (_groceryItems.isNotEmpty) {
+      content = ListView.builder(
+          itemCount: _groceryItems.length,
+          itemBuilder: (ctx, index) {
+            final item = _groceryItems[index];
+            return Dismissible(
+              key: ValueKey(item.id),
+              onDismissed: (direction) {
+                _removeItem(_groceryItems[index]);
+
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('${item.name} dismissed!!'),
+                  ),
+                );
+              },
+              // Show a red background as the item is swiped away.
+              background: Container(color: Colors.red),
+              child: ListTile(
+                title: Text(item.name),
+                leading: Container(
+                  width: 24,
+                  height: 24,
+                  color: item.category.color,
+                ),
+                trailing: Text(item.quantity.toString()),
+              ),
+            );
+          });
+    }
     return Scaffold(
       appBar: AppBar(
         title: const Text('Your groceries'),
@@ -42,40 +82,7 @@ class _GroceryListState extends State<GroceryList> {
           ),
         ],
       ),
-      body: _groceryItems.isEmpty
-          ? const Center(
-              child: Text('No items here'),
-            )
-          : ListView.builder(
-              itemCount: _groceryItems.length,
-              itemBuilder: (ctx, index) {
-                final item = _groceryItems[index];
-                return Dismissible(
-                  key: Key(item.id),
-                  onDismissed: (direction) {
-                    setState(() {
-                      _groceryItems.removeAt(index);
-                    });
-
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('${item.name} dismissed!!'),
-                      ),
-                    );
-                  },
-                  // Show a red background as the item is swiped away.
-                  background: Container(color: Colors.red),
-                  child: ListTile(
-                    title: Text(item.name),
-                    leading: Container(
-                      width: 24,
-                      height: 24,
-                      color: item.category.color,
-                    ),
-                    trailing: Text(item.quantity.toString()),
-                  ),
-                );
-              }),
+      body: content,
     );
   }
 }
