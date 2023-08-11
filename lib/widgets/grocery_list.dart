@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-
 import 'package:forms_app/data/dummy_items.dart';
+
+import 'package:forms_app/models/grocery_item.dart';
 import 'package:forms_app/widgets/new_item.dart';
 
 class GroceryList extends StatefulWidget {
@@ -11,12 +12,22 @@ class GroceryList extends StatefulWidget {
 }
 
 class _GroceryListState extends State<GroceryList> {
-  void _addItem() {
-    Navigator.of(context).push(
+  final List<GroceryItem> _groceryItems = [];
+
+  void _addItem() async {
+    final newItem = await Navigator.of(context).push<GroceryItem>(
       MaterialPageRoute(
         builder: (ctx) => const NewItem(),
       ),
     );
+
+    if (newItem == null) {
+      return;
+    }
+
+    setState(() {
+      _groceryItems.add(newItem);
+    });
   }
 
   @override
@@ -31,18 +42,40 @@ class _GroceryListState extends State<GroceryList> {
           ),
         ],
       ),
-      body: ListView.builder(
-        itemCount: groceryItems.length,
-        itemBuilder: (ctx, index) => ListTile(
-          title: Text(groceryItems[index].name),
-          leading: Container(
-            width: 24,
-            height: 24,
-            color: groceryItems[index].category.color,
-          ),
-          trailing: Text(groceryItems[index].quantity.toString()),
-        ),
-      ),
+      body: _groceryItems.isEmpty
+          ? const Center(
+              child: Text('No items here'),
+            )
+          : ListView.builder(
+              itemCount: _groceryItems.length,
+              itemBuilder: (ctx, index) {
+                final item = _groceryItems[index];
+                return Dismissible(
+                  key: Key(item.id),
+                  onDismissed: (direction) {
+                    setState(() {
+                      _groceryItems.removeAt(index);
+                    });
+
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('${item.name} dismissed!!'),
+                      ),
+                    );
+                  },
+                  // Show a red background as the item is swiped away.
+                  background: Container(color: Colors.red),
+                  child: ListTile(
+                    title: Text(item.name),
+                    leading: Container(
+                      width: 24,
+                      height: 24,
+                      color: item.category.color,
+                    ),
+                    trailing: Text(item.quantity.toString()),
+                  ),
+                );
+              }),
     );
   }
 }
